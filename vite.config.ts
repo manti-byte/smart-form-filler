@@ -1,29 +1,35 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
 export default defineConfig({
+  plugins: [react()],
   resolve: {
     alias: {
       "@shared": resolve(__dirname, "src/shared"),
+      "@popup": resolve(__dirname, "src/popup"),
     },
   },
   build: {
     outDir: "dist",
-    emptyOutDir: false, // не стирать попап, собранный первым проходом
-    lib: {
-      entry: resolve(__dirname, "src/content/content-script.ts"),
-      formats: ["iife"],
-      name: "SFFContent",
-      fileName: () => "content/content-script.js",
-    },
+    emptyOutDir: true,
     rollupOptions: {
+      input: {
+        popup: resolve(__dirname, "index.html"),
+        "background/service-worker": resolve(__dirname, "src/background/service-worker.ts"),
+      },
       output: {
-        // iife + inlineDynamicImports = один файл, никаких import
-        inlineDynamicImports: true,
+        entryFileNames: (chunk) => {
+          if (chunk.name === "background/service-worker") {
+            return "background/service-worker.js";
+          }
+          return "assets/[name]-[hash].js";
+        },
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
       },
     },
-    minify: false, // читаемость в DevTools; можно true для прод
-    target: "chrome110",
   },
-  publicDir: false, // не копировать public второй раз
+  publicDir: "public",
 });
+'@
